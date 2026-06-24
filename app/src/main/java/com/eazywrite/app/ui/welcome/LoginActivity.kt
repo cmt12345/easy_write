@@ -8,7 +8,9 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.lifecycleScope
 import com.eazywrite.app.R
 import com.eazywrite.app.common.toast
+import com.eazywrite.app.data.database.db
 import com.eazywrite.app.data.model.SignUpBean
+import com.eazywrite.app.data.model.User
 import com.eazywrite.app.data.network.Network.accountService
 import com.eazywrite.app.data.repository.UserRepository
 import com.eazywrite.app.databinding.FragmentLoginBinding
@@ -26,6 +28,42 @@ import okhttp3.RequestBody
 class LoginActivity : AppCompatActivity(), View.OnClickListener {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            kotlin.runCatching {
+                withContext(Dispatchers.IO) {
+                    val username = "demo@local"
+                    db.userDao().logoutAll()
+                    val existing = db.userDao().getByName(username)
+                    if (existing != null) {
+                        db.userDao().update(
+                            existing.copy(
+                                nickname = "演示用户",
+                                isActive = true
+                            )
+                        )
+                    } else {
+                        db.userDao().insert(
+                            User(
+                                username = username,
+                                nickname = "演示用户",
+                                avatar = "",
+                                isActive = true
+                            )
+                        )
+                    }
+                }
+            }.onSuccess {
+                toast("已进入演示模式")
+                MainActivity.jumpMainActivity(this@LoginActivity)
+                finish()
+            }.onFailure {
+                toast("演示模式初始化失败：${it.message}")
+                showLoginPage()
+            }
+        }
+    }
+
+    private fun showLoginPage() {
         this.setWindow(false)
         this.setContentView(R.layout.fragment_login)
         mActivity = this
@@ -59,8 +97,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
 
     var mActivity: LoginActivity? = null
     private fun loginUp() {
-        val account = binding!!.account.text.toString()
-        val password = binding!!.passwordWelcome.text.toString()
+        val account = binding.account.text.toString()
+        val password = binding.passwordWelcome.text.toString()
         if (account == "") {
             toast("用户名不能为空")
             return
@@ -95,7 +133,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                     toast(body?.msg ?: "登录失败")
                 }
             }.onFailure {
-                toast("注册失败：${it.message}")
+                toast("登录失败：${it.message}")
             }
         }
     }
