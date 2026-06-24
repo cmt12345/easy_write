@@ -16,16 +16,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download successful APK artifact
+      - name: Download demo APK artifact
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api repos/${{ github.repository }}/actions/artifacts/7838742003/zip > easy-write-debug-apk.zip
+        run: gh api repos/${{ github.repository }}/actions/artifacts/7841693363/zip > easy-write-demo-apk.zip
 
-      - name: Verify APK archive
-        run: unzip -t easy-write-debug-apk.zip
+      - name: Extract and verify demo APK
+        run: mkdir -p artifact && unzip -q easy-write-demo-apk.zip -d artifact && test -f artifact/app-debug.apk
 
-      - name: Create public release
+      - name: Replace public release APK
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create debug-apk-20260624 easy-write-debug-apk.zip --title "Easy Write Debug APK" --notes "Debug APK generated from GitHub Actions run 28071024743."
+        run: gh release upload debug-apk-20260624 artifact/app-debug.apk --clobber
