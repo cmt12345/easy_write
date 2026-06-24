@@ -1,0 +1,30 @@
+name: Publish APK Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-apk.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download successful APK artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/actions/artifacts/7838742003/zip > easy-write-debug-apk.zip
+
+      - name: Verify APK archive
+        run: unzip -t easy-write-debug-apk.zip
+
+      - name: Create public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create debug-apk-20260624 easy-write-debug-apk.zip --title "Easy Write Debug APK" --notes "Debug APK generated from GitHub Actions run 28071024743."
